@@ -21,22 +21,30 @@ import android.view.View;
 import android.view.Window;
 import java.util.Random;
 import android.view.MotionEvent;
+import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener2 {
 
     private float xPos, xVel = 0.0f;
     private float yPos, baseY = 6.0f, yVel = 0.0f;
-    private float xMax, yMax, sensitivity = 12;
+    private float xMax, yMax, startX, startY, sensitivityX = 10, sensitivityY = 14;
     private float x, y;
-    private Bitmap ball;
+    private Bitmap ball, start, button;
     private SensorManager sensorManager;
-    private Random rand = new Random();
+    private int singleMode = 0;
+    private int testN = 0, testI = 10;
+    private float testX[], testY[];
+    private BallView ballView;
+    private boolean startVisible;
+    private long start_time;
+    private long end_time;
+    private double results[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        BallView ballView = new BallView(this);
+        ballView = new BallView(this);
 
         setContentView(ballView);
 
@@ -45,7 +53,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         display.getSize(size);
         xMax = (float) size.x - 100;
         yMax = (float) size.y - 280;
-
+        startX = xMax/2 - 240;
+        startY = yMax - 500;
+        startVisible = true;
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
     }
 
@@ -68,31 +78,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-//        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-////            xAccel = sensorEvent.values[0];
-////            yAccel = -sensorEvent.values[1];
-//            xVel = sensorEvent.values[0];
-//            yVel = baseY - sensorEvent.values[1];
-//            updateBall();
-//        }
+        if (singleMode == 1 && sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            xVel = sensorEvent.values[0];
+            yVel = baseY - sensorEvent.values[1];
+            updateBall();
+        }
     }
 
 
     private void updateBall() {
         float frameTime = 0.666f;
-//        xVel += (xAccel * frameTime);
-//        yVel += (yAccel * frameTime);
-
-        float xS = (xVel * sensitivity) * frameTime;
-        float yS = (yVel * sensitivity) * frameTime;
+        float xS = (xVel * sensitivityX) * frameTime;
+        float yS = (yVel * sensitivityY) * frameTime;
 
         xPos -= xS;
         yPos -= yS;
 
         if (xPos > xMax) {
             xPos = xMax;
-        } else if (xPos < 0) {
-            xPos = 0;
+        } else if (xPos < 50) {
+            xPos = 50;
         }
 
         if (yPos > yMax) {
@@ -112,14 +117,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         public BallView(Context context) {
             super(context);
             Bitmap ballSrc = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
+            Bitmap startSrc = BitmapFactory.decodeResource(getResources(), R.drawable.start);
+            Bitmap buttonSrc = BitmapFactory.decodeResource(getResources(), R.drawable.button);
             final int dstWidth = 100;
             final int dstHeight = 100;
+            //x = 0-55
+            //y = 1200 1400
             ball = Bitmap.createScaledBitmap(ballSrc, dstWidth, dstHeight, true);
+            start = Bitmap.createScaledBitmap(startSrc, 500, 200, true);
+            button = Bitmap.createScaledBitmap(buttonSrc, 55, 200, true);
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
-            canvas.drawBitmap(ball, xPos, yPos, null);
+            canvas.drawBitmap(button, 0, 1200, null);
+            if(!startVisible) {
+                canvas.drawBitmap(ball, xPos, yPos, null);
+            }else{
+                canvas.drawBitmap(start, startX, startY, null);
+            }
             invalidate();
         }
         @Override
@@ -128,13 +144,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //            Log.d("click", "X = " + String.valueOf(event.getX()) + ", Y = " + String.valueOf(event.getY()));
             x = event.getX();
             y = event.getY();
-//            Log.d("click", "Pos: X = " + String.valueOf(xPos) + ", Y = " + String.valueOf(yPos));
-            if(x >= xPos && x <= xPos + 100 && y >= yPos && y <= yPos + 100)
-            {
-                xPos = rand.nextInt((int)xMax);
-                yPos = rand.nextInt((int)yMax);
-            }
-
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     break;
@@ -142,6 +151,51 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     break;
                 case MotionEvent.ACTION_UP:
                     break;
+            }
+            if(x <= 55 && y >= 1200 && y <= 1400)
+            {
+                if(singleMode == 1) singleMode = 0;
+                else singleMode = 1;
+            }
+            else if(!startVisible && x >= xPos - 50 && x <= xPos + 150 && y >= yPos - 50 && y <= yPos + 150) //click dot
+            {
+//                Log.d("click", "click dot");
+                end_time = System.nanoTime();
+                results[testI << singleMode] = (end_time - start_time) / 1e6;
+//                Log.d("click", "I = " + testI + " time: " + results[testI]);
+                start_time = end_time;
+                if(testI < testN - 1){
+//                    Log.d("click", "set to: x = " + String.valueOf(testX[testI]) + ", y = " + String.valueOf(testY[testI]));
+                    testI ++;
+                    xPos = testX[testI];
+                    yPos = testY[testI];
+                }
+                else {
+                    startVisible = true;
+//                    for (int i = 0; i < 10; i ++)
+//                    {
+//                        Log.d("click", results[i] + "ms");
+//                    }
+                }
+
+            }
+            else if(startVisible && x >= startX && x <= startX + 500 && y >= startY && y <= startY + 200) //press start
+            {
+                testN = 10;
+                start_time = System.nanoTime(); //start
+                results = new double[2*testN + 2];
+                Random rand = new Random();
+                testX = new float[testN];
+                testY = new float[testN];
+                for (int i = 0; i < testN; i ++) {
+                    testX[i] = rand.nextInt((int)xMax);
+                    testY[i] = rand.nextInt((int)yMax);
+//                    Log.d("click", "x = " + String.valueOf(testX[i]) + ", y = " + String.valueOf(testY[i]));
+                }
+                xPos = testX[0];
+                yPos = testY[0];
+                startVisible = false;
+                testI = 0;
             }
             return false;
         }
