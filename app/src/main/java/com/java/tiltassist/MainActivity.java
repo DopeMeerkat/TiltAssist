@@ -1,125 +1,150 @@
 package com.java.tiltassist;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Point;
+//import android.graphics.drawable.ShapeDrawable;
+import android.R.drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
+import android.hardware.SensorEventListener2;
 import android.hardware.SensorManager;
-import android.content.Context;
-import android.widget.TextView;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.view.View;
-import android.view.Menu;
-
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Display;
+import android.view.View;
+import android.view.Window;
+import java.util.Random;
+import android.view.MotionEvent;
 
-public class MainActivity extends AppCompatActivity {
-    SensorManager sensorManager;
-    Sensor gyroSensor;
-    Sensor accelSensor;
-    TextView gyroText;
-    TextView accelText;
-    boolean singleHand = false;
-    float gX = 0;
-    float gY = 0;
-    float gZ = 0;
-    ButtonView view;
+public class MainActivity extends AppCompatActivity implements SensorEventListener2 {
+
+    private float xPos, xVel = 0.0f;
+    private float yPos, baseY = 6.0f, yVel = 0.0f;
+    private float xMax, yMax, sensitivity = 12;
+    private float x, y;
+    private Bitmap ball;
+    private SensorManager sensorManager;
+    private Random rand = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        BallView ballView = new BallView(this);
+
+        setContentView(ballView);
+
+        Point size = new Point();
+        Display display = getWindowManager().getDefaultDisplay();
+        display.getSize(size);
+        xMax = (float) size.x - 100;
+        yMax = (float) size.y - 280;
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        gyroText = (TextView) findViewById(R.id.gyroText);
-        accelText = (TextView) findViewById(R.id.accelText);
-    }
-    public void onResume() {
-        super.onResume();
-        sensorManager.registerListener(gyroListener, gyroSensor,
-                SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(accelListener, accelSensor,
-                SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-    public void onStop() {
-        super.onStop();
-        sensorManager.unregisterListener(gyroListener);
-        sensorManager.unregisterListener(accelListener);
-    }
-
-    public SensorEventListener gyroListener = new SensorEventListener() {
-        public void onAccuracyChanged(Sensor gyroSensor, int acc) { }
-
-        public void onSensorChanged(SensorEvent event) {
-            if(singleHand) {
-                gX = event.values[0];
-                gY = event.values[1];
-                gZ = event.values[2];
-            }
-            gyroText.setText("Gyroscope X : " + gX + "| Y : " + gY + "| Z : " + gZ);
-        }
-    };
-
-    public SensorEventListener accelListener = new SensorEventListener() {
-        public void onAccuracyChanged(Sensor accelSensor, int acc) { }
-
-        public void onSensorChanged(SensorEvent event) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            accelText.setText("Accelerometer X : " + x + "| Y : " + y + "| Z : " + z);
-        }
-    };
-
-    private class ButtonView extends View{
-        public ButtonView(Context context){
-            super(context);
-        }
-
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-
-            // custom drawing code here
-            Paint paint = new Paint();
-            paint.setStyle(Paint.Style.FILL);
-
-            // make the entire canvas white
-            paint.setColor(Color.WHITE);
-            canvas.drawPaint(paint);
-
-            // draw blue circle with anti aliasing turned off
-            paint.setAntiAlias(false);
-            paint.setColor(Color.BLUE);
-            canvas.drawCircle(20, 20, 15, paint);
-
-            // draw green circle with anti aliasing turned on
-            paint.setAntiAlias(true);
-            paint.setColor(Color.GREEN);
-            canvas.drawCircle(60, 20, 15, paint);
-
-            // draw red rectangle with anti aliasing turned off
-            paint.setAntiAlias(false);
-            paint.setColor(Color.RED);
-            canvas.drawRect(100, 5, 200, 30, paint);
-
-            // draw the rotated text
-            canvas.rotate(-45);
-
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawText("Graphics Rotation", 40, 180, paint);
-
-            //undo the rotate
-            canvas.restore();
-        }
-    }
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+    protected void onStart() {
+        super.onStart();
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+    }
+
+    @Override
+    protected void onStop() {
+        sensorManager.unregisterListener(this);
+        super.onStop();
+    }
+
+    @Override
+    public void onFlushCompleted(Sensor sensor) {
+
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+//        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+////            xAccel = sensorEvent.values[0];
+////            yAccel = -sensorEvent.values[1];
+//            xVel = sensorEvent.values[0];
+//            yVel = baseY - sensorEvent.values[1];
+//            updateBall();
+//        }
+    }
+
+
+    private void updateBall() {
+        float frameTime = 0.666f;
+//        xVel += (xAccel * frameTime);
+//        yVel += (yAccel * frameTime);
+
+        float xS = (xVel * sensitivity) * frameTime;
+        float yS = (yVel * sensitivity) * frameTime;
+
+        xPos -= xS;
+        yPos -= yS;
+
+        if (xPos > xMax) {
+            xPos = xMax;
+        } else if (xPos < 0) {
+            xPos = 0;
+        }
+
+        if (yPos > yMax) {
+            yPos = yMax;
+        } else if (yPos < 0) {
+            yPos = 0;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
+    }
+
+    private class BallView extends View {
+
+        public BallView(Context context) {
+            super(context);
+            Bitmap ballSrc = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
+            final int dstWidth = 100;
+            final int dstHeight = 100;
+            ball = Bitmap.createScaledBitmap(ballSrc, dstWidth, dstHeight, true);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            canvas.drawBitmap(ball, xPos, yPos, null);
+            invalidate();
+        }
+        @Override
+        public boolean onTouchEvent(MotionEvent event)
+        {
+//            Log.d("click", "X = " + String.valueOf(event.getX()) + ", Y = " + String.valueOf(event.getY()));
+            x = event.getX();
+            y = event.getY();
+//            Log.d("click", "Pos: X = " + String.valueOf(xPos) + ", Y = " + String.valueOf(yPos));
+            if(x >= xPos && x <= xPos + 100 && y >= yPos && y <= yPos + 100)
+            {
+                xPos = rand.nextInt((int)xMax);
+                yPos = rand.nextInt((int)yMax);
+            }
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    break;
+                case MotionEvent.ACTION_UP:
+                    break;
+            }
+            return false;
+        }
+
     }
 }
