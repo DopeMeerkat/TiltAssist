@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Bitmap ball, start, button;
     private SensorManager sensorManager;
     private int singleMode = 0;
-    private int testN = 0, testI = 10;
+    private int testN, testI;
     private float testX[], testY[];
     private BallView ballView;
     private boolean startVisible;
@@ -197,7 +197,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         }
                         Log.d("click", "total: " + sum);
 //                    }
-                    singleMode = 0;
                 }
 
             }
@@ -223,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 else toastText = "Starting TiltAssist Test";
                 Toast.makeText(this.getContext(), toastText,
                         Toast.LENGTH_SHORT).show();
+                singleMode = 0;
             }
             return false;
         }
