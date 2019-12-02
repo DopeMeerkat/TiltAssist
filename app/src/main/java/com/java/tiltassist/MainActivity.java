@@ -22,6 +22,7 @@ import android.view.Window;
 import java.util.Random;
 import android.view.MotionEvent;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener2 {
 
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private long start_time;
     private long end_time;
     private double results[];
+    private int state = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         startX = xMax/2 - 240;
         startY = yMax - 500;
         startVisible = true;
+        state = 0;
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
     }
 
@@ -78,32 +81,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (singleMode == 1 && sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             xVel = sensorEvent.values[0];
-            yVel = baseY - sensorEvent.values[1];
+            yVel = sensorEvent.values[1];
             updateBall();
         }
     }
 
 
     private void updateBall() {
-        float frameTime = 0.666f;
-        float xS = (xVel * sensitivityX) * frameTime;
-        float yS = (yVel * sensitivityY) * frameTime;
+        if(singleMode == 1) {
+            float frameTime = 0.666f;
+            float xS = (xVel * sensitivityX) * frameTime;
+            float yS = ((baseY - yVel) * sensitivityY) * frameTime;
 
-        xPos -= xS;
-        yPos -= yS;
+            xPos -= xS;
+            yPos -= yS;
 
-        if (xPos > xMax) {
-            xPos = xMax;
-        } else if (xPos < 50) {
-            xPos = 50;
-        }
+            if (xPos > xMax) {
+                xPos = xMax;
+            } else if (xPos < 50) {
+                xPos = 50;
+            }
 
-        if (yPos > yMax) {
-            yPos = yMax;
-        } else if (yPos < 0) {
-            yPos = 0;
+            if (yPos > yMax) {
+                yPos = yMax;
+            } else if (yPos < 0) {
+                yPos = 0;
+            }
         }
     }
 
@@ -130,7 +135,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         @Override
         protected void onDraw(Canvas canvas) {
-            canvas.drawBitmap(button, 0, 1200, null);
+            if(state == 1) {
+                canvas.drawBitmap(button, 0, 1200, null);
+            }
             if(!startVisible) {
                 canvas.drawBitmap(ball, xPos, yPos, null);
             }else{
@@ -154,6 +161,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             if(x <= 55 && y >= 1200 && y <= 1400)
             {
+                baseY = yVel;
+//                Log.d("click", "orientation: " + String.valueOf(baseY));
+//                end_time = System.nanoTime();
+//                results[testN] = (end_time - start_time) / 1e6;
+//                Log.d("click", "Toggle time: " + results[testN]);
+//                start_time = end_time;
                 if(singleMode == 1) singleMode = 0;
                 else singleMode = 1;
             }
@@ -161,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             {
 //                Log.d("click", "click dot");
                 end_time = System.nanoTime();
-                results[testI << singleMode] = (end_time - start_time) / 1e6;
+                results[testI + (testN * state)] = (end_time - start_time) / 1e6;
 //                Log.d("click", "I = " + testI + " time: " + results[testI]);
                 start_time = end_time;
                 if(testI < testN - 1){
@@ -172,10 +185,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 else {
                     startVisible = true;
-//                    for (int i = 0; i < 10; i ++)
-//                    {
-//                        Log.d("click", results[i] + "ms");
+                    if (state == 0) state = 1;
+                    else state = 0;
+//                    for (int j = 0; j < 2; j ++){
+                    int j = singleMode;
+                        int sum = 0;
+                        for (int i = 0; i < testN; i ++)
+                        {
+                            sum += results[i + (j * testN)];
+                            Log.d("click", results[i + (j * testN)] + "ms");
+                        }
+                        Log.d("click", "total: " + sum);
 //                    }
+                    singleMode = 0;
                 }
 
             }
@@ -183,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             {
                 testN = 10;
                 start_time = System.nanoTime(); //start
-                results = new double[2*testN + 2];
+                results = new double[2*testN];
                 Random rand = new Random();
                 testX = new float[testN];
                 testY = new float[testN];
@@ -196,6 +218,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 yPos = testY[0];
                 startVisible = false;
                 testI = 0;
+                String toastText;
+                if (state == 0) toastText = "Starting Basic Test";
+                else toastText = "Starting TiltAssist Test";
+                Toast.makeText(this.getContext(), toastText,
+                        Toast.LENGTH_SHORT).show();
             }
             return false;
         }

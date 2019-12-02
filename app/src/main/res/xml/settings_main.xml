@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Settings">
+
+    <SeekBarPreference
+        android:defaultValue="8"
+        android:key="X_SENSITIVITY"
+        android:title="X Sensitivity"
+        />
+
+
+</PreferenceScreen>
