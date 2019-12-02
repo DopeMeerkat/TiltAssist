@@ -100,8 +100,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             if (xPos > xMax) {
                 xPos = xMax;
-            } else if (xPos < 50) {
-                xPos = 50;
+            } else if (xPos < 60) {
+                xPos = 60;
             }
 
             if (yPos > yMax) {
@@ -124,8 +124,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Bitmap ballSrc = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
             Bitmap startSrc = BitmapFactory.decodeResource(getResources(), R.drawable.start);
             Bitmap buttonSrc = BitmapFactory.decodeResource(getResources(), R.drawable.button);
-            final int dstWidth = 100;
-            final int dstHeight = 100;
+            final int dstWidth = 150;
+            final int dstHeight = 150;
             //x = 0-55
             //y = 1200 1400
             ball = Bitmap.createScaledBitmap(ballSrc, dstWidth, dstHeight, true);
@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         @Override
         protected void onDraw(Canvas canvas) {
-            if(state == 1) {
+            if(state == 2) {
                 canvas.drawBitmap(button, 0, 1200, null);
             }
             if(!startVisible) {
@@ -159,7 +159,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 case MotionEvent.ACTION_UP:
                     break;
             }
-            if(x <= 55 && y >= 1200 && y <= 1400)
+            if(x <= 60 && y <= 60) //for testing use only
+            {
+                singleMode = 0;
+                state = 0;
+                startVisible = true;
+            }
+            if(x <= 60 && y >= 1200 && y <= 1400)
             {
                 baseY = yVel;
 //                Log.d("click", "orientation: " + String.valueOf(baseY));
@@ -170,11 +176,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if(singleMode == 1) singleMode = 0;
                 else singleMode = 1;
             }
-            else if(!startVisible && x >= xPos - 50 && x <= xPos + 150 && y >= yPos - 50 && y <= yPos + 150) //click dot
+            else if(!startVisible && x >= xPos - 80 && x <= xPos + 230 && y >= yPos - 80 && y <= yPos + 230) //click dot
             {
 //                Log.d("click", "click dot");
                 end_time = System.nanoTime();
-                results[testI + (testN * state)] = (end_time - start_time) / 1e6;
+                results[testI] = (end_time - start_time) / 1e6;
 //                Log.d("click", "I = " + testI + " time: " + results[testI]);
                 start_time = end_time;
                 if(testI < testN - 1){
@@ -185,17 +191,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 else {
                     startVisible = true;
-                    if (state == 0) state = 1;
-                    else state = 0;
+                    if (state == 2) state = 0;
+                    else state++;
 //                    for (int j = 0; j < 2; j ++){
                     int j = singleMode;
-                        int sum = 0;
-                        for (int i = 0; i < testN; i ++)
-                        {
-                            sum += results[i + (j * testN)];
-                            Log.d("click", results[i + (j * testN)] + "ms");
-                        }
-                        Log.d("click", "total: " + sum);
+                    int sum = 0;
+                    for (int i = 0; i < testN; i ++)
+                    {
+                        sum += results[i];
+                        Log.d("click", results[i] + "ms");
+                    }
+                    Log.d("click", "total: " + sum);
 //                    }
                 }
 
@@ -204,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             {
                 testN = 10;
                 start_time = System.nanoTime(); //start
-                results = new double[2*testN];
+                results = new double[testN];
                 Random rand = new Random();
                 testX = new float[testN];
                 testY = new float[testN];
@@ -219,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 testI = 0;
                 String toastText;
                 if (state == 0) toastText = "Starting Basic Test";
+                else if (state == 1) toastText = "Starting Huawei Single Handed Mode";
                 else toastText = "Starting TiltAssist Test";
                 Toast.makeText(this.getContext(), toastText,
                         Toast.LENGTH_SHORT).show();
